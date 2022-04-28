@@ -31,26 +31,11 @@ class OpenWeatherService
     public function getHistoricalWeather($lat, $lon, $date)
     {
         return $this->callApi('/timemachine?lat=' . $lat . '&lon=' . $lon . '&dt=' . $date . '&appid=' . $this->api_key);
-     
     }
 
-    public function getCurrentAndForecastWeather($lat, $lon, $date)
+    public function getCurrentAndForecastWeather($lat, $lon)
     {
-        $response = $this->callApi('?lat=' . $lat . '&lon=' . $lon . '&exclude=current,minutely,hourly,alerts&appid=' . $this->api_key);
+        return $this->callApi('?lat=' . $lat . '&lon=' . $lon . '&exclude=current,minutely,hourly,alerts&appid=' . $this->api_key);
 
-        if ($response->successful()) {
-
-            $exactDay = collect($response->json()['daily'])->filter(function ($value) use ($date) {
-                return Carbon::createFromTimestamp($value['dt'])->format('m/d/Y') == Carbon::createFromTimestamp($date)->format('m/d/Y');
-            });
-
-            return collect($exactDay)->first();
-        } else {
-
-            return response()->json([
-                'code' => $response->json()['cod'],
-                'message' => "Not Found"
-            ]);
-        }
     }
 }

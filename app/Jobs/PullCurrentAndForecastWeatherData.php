@@ -18,8 +18,6 @@ class PullCurrentAndForecastWeatherData implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
 
-    protected $lat;
-    protected $lng;
     protected $date;
 
     /**
@@ -27,10 +25,8 @@ class PullCurrentAndForecastWeatherData implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($lat, $lng, $date)
+    public function __construct($date)
     {
-        $this->lat = $lat;
-        $this->lng = $lng;
         $this->date = $date;
     }
 
@@ -41,21 +37,30 @@ class PullCurrentAndForecastWeatherData implements ShouldQueue
      */
     public function handle(OpenWeatherService $weather)
     {
-        $response = $weather->getHistoricalWeather($this->lat, $this->lng, $this->date);
-
-        $exactDay = collect($response->json()['daily'])->filter(function ($value) {
-            return Carbon::createFromTimestamp($value['dt'])->format('m/d/Y') == Carbon::createFromTimestamp($this->date)->format('m/d/Y');
-        });
-
-        $data = collect($exactDay)->first();
+        info("current");
         $cities = City::all();
-        
         foreach ($cities as $city) {
-            WeatherForecast::create([
-                'city_id' => $city->id,
-                'date' => $this->date,
-                'data' => $data,
-            ]);
+            $response = $weather->getCurrentAndForecastWeather($city->lat, $city->lng);
+
+            $exactDay = collect($response->json()['daily'])->filter(function ($value) {
+                return Carbon::createFromTimestamp($value['dt'])->format('m/d/Y') == Carbon::createFromTimestamp($this->date)->format('m/d/Y');
+            });
+
+            $data = collect($exactDay)->first();
+
+            if (!$data) {
+                throw new \Exception('Not found', 404);
+            }
+
+            WeatherForecast::updateOrCreate(
+                [
+                    'date' => Carbon::createFromTimestamp($this->date)->format('Y-m-d'),
+                    'city_id' => $city->id,
+                ],
+                [
+                    'data' => $data,
+                ]
+            );
         }
     }
 }

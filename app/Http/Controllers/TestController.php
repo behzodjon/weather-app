@@ -13,8 +13,24 @@ class TestController extends Controller
 {
     public function index(Request $request, OpenWeatherService $weather)
     {
+       
+        $date=Carbon::tomorrow()->format('Y-m-d');
+        dd( Carbon::createFromFormat('Y-m-d', $date)->isFuture());
+        $date = Carbon::today();
+        $cities = City::all();
+        foreach ($cities as $city) {
+            WeatherForecast::updateOrCreate(
+                [
+                    'date' => $date,
+                    'city_id' => $city->id,
+                ],
+                [
+                    'data' => [],
+                ]
+            );
+        }
 
-
+        dd(WeatherForecast::where('date', Carbon::today())->exists());
         // dd(Carbon::createFromDate($request->date)->timestamp);
         $today = Carbon::createFromTimestamp(1651230000)->format('m/d/Y');
         $tomorrow = Carbon::today()->format('m/d/Y');
