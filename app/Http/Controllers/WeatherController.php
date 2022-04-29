@@ -16,7 +16,11 @@ class WeatherController extends Controller
   
     public function store(Request $request)
     {
-        if (WeatherForecast::where('date', $request->date)->doesntExist()) {
+        $validatedData = $request->validate([
+            'date' => 'required',
+        ]);
+        
+        if (WeatherForecast::where('date', $validatedData)->doesntExist()) {
             PullWeather::dispatch($request->date);
         }
 

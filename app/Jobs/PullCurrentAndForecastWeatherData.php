@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\City;
 use Illuminate\Bus\Queueable;
 use App\Models\WeatherForecast;
+use App\Events\WeatherDataPulled;
 use App\Services\OpenWeatherService;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -51,15 +52,18 @@ class PullCurrentAndForecastWeatherData implements ShouldQueue
                 throw new \Exception('Not found', 404);
             }
 
-            WeatherForecast::updateOrCreate(
-                [
-                    'date' => Carbon::createFromTimestamp($this->date)->format('Y-m-d'),
-                    'city_id' => $city->id,
-                ],
-                [
-                    'data' => $data,
-                ]
-            );
+            WeatherDataPulled::dispatch($city, $this->date, $data);
+
+
+            // WeatherForecast::updateOrCreate(
+            //     [
+            //         'date' => Carbon::createFromTimestamp($this->date)->format('Y-m-d'),
+            //         'city_id' => $city->id,
+            //     ],
+            //     [
+            //         'data' => $data,
+            //     ]
+            // );
         });
     }
 }

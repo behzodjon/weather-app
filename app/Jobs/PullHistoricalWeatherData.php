@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\WeatherDataPulled;
 use Carbon\Carbon;
 use App\Models\City;
 use Illuminate\Bus\Queueable;
@@ -40,22 +41,26 @@ class PullHistoricalWeatherData implements ShouldQueue
     public function handle(OpenWeatherService $weather)
     {
         City::all()->each(function ($city) use ($weather) {
-            
+
             $response = $weather->getHistoricalWeather($city->lat, $city->lng, $this->date);
 
             if (!$response->successful()) {
                 throw new \Exception($response->json()['message'], $response->json()['cod'],);
             }
 
-            WeatherForecast::updateOrCreate(
-                [
-                    'date' => Carbon::createFromTimestamp($this->date)->format('Y-m-d'),
-                    'city_id' => $city->id,
-                ],
-                [
-                    'data' => $response['current'],
-                ]
-            );
+
+
+            WeatherDataPulled::dispatch($city, $this->date, $response['current']);
+
+            // WeatherForecast::updateOrCreate(
+            //     [
+            //         'date' => Carbon::createFromTimestamp($this->date)->format('Y-m-d'),
+            //         'city_id' => $city->id,
+            //     ],
+            //     [
+            //         'data' => $response['current'],
+            //     ]
+            // );
         });
     }
 }
