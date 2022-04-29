@@ -18,7 +18,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->job(new PullWeather(Carbon::now()))->when(function () {
+        $schedule->job(new PullWeather(Carbon::now()))->everySixHours()->when(function () {
             return WeatherForecast::where('date', Carbon::today())->exists();
         });
     }

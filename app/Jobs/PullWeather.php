@@ -25,7 +25,6 @@ class PullWeather implements ShouldQueue
      */
     public function __construct($date)
     {
-        info($date);
         $this->date = $date;
     }
 
@@ -37,7 +36,6 @@ class PullWeather implements ShouldQueue
     public function handle()
     {
         $current_timestamp = Carbon::createFromDate($this->date)->timestamp;
-        info($current_timestamp);
 
         Carbon::createFromDate($this->date)->isPast()
             ? PullHistoricalWeatherData::dispatch($current_timestamp)

@@ -39,14 +39,14 @@ class PullHistoricalWeatherData implements ShouldQueue
      */
     public function handle(OpenWeatherService $weather)
     {
-        $cities = City::all();
-        info($this->date);
-
-        foreach ($cities as $city) {
+        City::all()->each(function ($city) use ($weather) {
+            
             $response = $weather->getHistoricalWeather($city->lat, $city->lng, $this->date);
+
             if (!$response->successful()) {
                 throw new \Exception($response->json()['message'], $response->json()['cod'],);
             }
+
             WeatherForecast::updateOrCreate(
                 [
                     'date' => Carbon::createFromTimestamp($this->date)->format('Y-m-d'),
@@ -56,6 +56,6 @@ class PullHistoricalWeatherData implements ShouldQueue
                     'data' => $response['current'],
                 ]
             );
-        }
+        });
     }
 }

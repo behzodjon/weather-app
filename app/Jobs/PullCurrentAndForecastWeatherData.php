@@ -37,9 +37,8 @@ class PullCurrentAndForecastWeatherData implements ShouldQueue
      */
     public function handle(OpenWeatherService $weather)
     {
-        info("current");
-        $cities = City::all();
-        foreach ($cities as $city) {
+        City::all()->each(function ($city) use ($weather) {
+
             $response = $weather->getCurrentAndForecastWeather($city->lat, $city->lng);
 
             $exactDay = collect($response->json()['daily'])->filter(function ($value) {
@@ -61,6 +60,6 @@ class PullCurrentAndForecastWeatherData implements ShouldQueue
                     'data' => $data,
                 ]
             );
-        }
+        });
     }
 }
