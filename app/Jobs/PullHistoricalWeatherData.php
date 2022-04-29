@@ -48,19 +48,8 @@ class PullHistoricalWeatherData implements ShouldQueue
                 throw new \Exception($response->json()['message'], $response->json()['cod'],);
             }
 
-
-
             WeatherDataPulled::dispatch($city, $this->date, $response['current']);
 
-            // WeatherForecast::updateOrCreate(
-            //     [
-            //         'date' => Carbon::createFromTimestamp($this->date)->format('Y-m-d'),
-            //         'city_id' => $city->id,
-            //     ],
-            //     [
-            //         'data' => $response['current'],
-            //     ]
-            // );
         });
     }
 }

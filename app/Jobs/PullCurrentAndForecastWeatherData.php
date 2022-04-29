@@ -53,17 +53,7 @@ class PullCurrentAndForecastWeatherData implements ShouldQueue
             }
 
             WeatherDataPulled::dispatch($city, $this->date, $data);
-
-
-            // WeatherForecast::updateOrCreate(
-            //     [
-            //         'date' => Carbon::createFromTimestamp($this->date)->format('Y-m-d'),
-            //         'city_id' => $city->id,
-            //     ],
-            //     [
-            //         'data' => $data,
-            //     ]
-            // );
+           
         });
     }
 }
