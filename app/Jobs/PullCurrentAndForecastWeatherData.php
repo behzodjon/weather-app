@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use App\Models\WeatherForecast;
 use App\Events\WeatherDataPulled;
 use App\Services\OpenWeatherService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -40,7 +41,9 @@ class PullCurrentAndForecastWeatherData implements ShouldQueue
     {
         City::all()->each(function ($city) use ($weather) {
 
-            $response = $weather->getCurrentAndForecastWeather($city->lat, $city->lng);
+            $response = Cache::remember('openWeather' . $this->date . $city->lat, now()->addMinutes(10), function () use ($city, $weather) {
+                return $weather->getCurrentAndForecastWeather($city->lat, $city->lng);
+            });
 
             $exactDay = collect($response->json()['daily'])->filter(function ($value) {
                 return Carbon::createFromTimestamp($value['dt'])->format('m/d/Y') == Carbon::createFromTimestamp($this->date)->format('m/d/Y');
@@ -53,7 +56,6 @@ class PullCurrentAndForecastWeatherData implements ShouldQueue
             }
 
             WeatherDataPulled::dispatch($city, $this->date, $data);
-           
         });
     }
 }
