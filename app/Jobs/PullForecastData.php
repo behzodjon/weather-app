@@ -51,7 +51,6 @@ class PullForecastData implements ShouldQueue
             if (!$data) {
                 throw new \Exception('Not found', 404);
             }
-
             WeatherDataPulled::dispatch($city, $this->date, $data);
         });
     }
