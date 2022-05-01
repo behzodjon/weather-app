@@ -2,10 +2,8 @@
 
 namespace App\Jobs;
 
-use Carbon\Carbon;
 use App\Models\City;
 use Illuminate\Bus\Queueable;
-use App\Models\WeatherForecast;
 use App\Events\WeatherDataPulled;
 use App\Services\OpenWeatherService;
 use Illuminate\Support\Facades\Cache;
@@ -15,10 +13,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 
-class PullCurrentAndForecastWeatherData implements ShouldQueue
+class PullCurrentAndHistoricalData implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
 
     protected $date;
 
@@ -31,7 +28,6 @@ class PullCurrentAndForecastWeatherData implements ShouldQueue
     {
         $this->date = $date;
     }
-
     /**
      * Execute the job.
      *
@@ -42,20 +38,15 @@ class PullCurrentAndForecastWeatherData implements ShouldQueue
         City::all()->each(function ($city) use ($weather) {
 
             $response = Cache::remember('openWeather' . $this->date . $city->lat, now()->addMinutes(10), function () use ($city, $weather) {
-                return $weather->getCurrentAndForecastWeather($city->lat, $city->lng);
+                return $weather->getHistoricalWeather($city->lat, $city->lng, $this->date);
             });
 
-            $exactDay = collect($response->json()['daily'])->filter(function ($value) {
-                return Carbon::createFromTimestamp($value['dt'])->format('m/d/Y') == Carbon::createFromTimestamp($this->date)->format('m/d/Y');
-            });
 
-            $data = collect($exactDay)->first();
-
-            if (!$data) {
+            if (!$response->successful()) {
                 throw new \Exception('Not found', 404);
             }
 
-            WeatherDataPulled::dispatch($city, $this->date, $data);
+            WeatherDataPulled::dispatch($city, $this->date, $response['current']);
         });
     }
 }

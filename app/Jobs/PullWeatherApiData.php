@@ -5,14 +5,12 @@ namespace App\Jobs;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
-use App\Jobs\PullHistoricalWeatherData;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
-use App\Jobs\PullCurrentAndForecastWeatherData;
 
-class PullWeather implements ShouldQueue
+class PullWeatherApiData implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -38,7 +36,7 @@ class PullWeather implements ShouldQueue
         $dateTimestamp = Carbon::createFromDate($this->date)->timestamp;
 
         Carbon::createFromDate($this->date)->isPast()
-            ? PullHistoricalWeatherData::dispatch($dateTimestamp)
-            : PullCurrentAndForecastWeatherData::dispatch($dateTimestamp);
+            ? PullCurrentAndHistoricalData::dispatch($dateTimestamp)
+            : PullForecastData::dispatch($dateTimestamp);
     }
 }

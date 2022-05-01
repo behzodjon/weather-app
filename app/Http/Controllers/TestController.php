@@ -13,7 +13,7 @@ class TestController extends Controller
 {
     public function index(Request $request, OpenWeatherService $weather)
     {
-       
+        dd(WeatherForecast::where('date', Carbon::today())->exists());
         $date=Carbon::tomorrow()->format('Y-m-d');
         dd( Carbon::createFromFormat('Y-m-d', $date)->isFuture());
         $date = Carbon::today();

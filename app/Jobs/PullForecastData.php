@@ -5,7 +5,6 @@ namespace App\Jobs;
 use Carbon\Carbon;
 use App\Models\City;
 use Illuminate\Bus\Queueable;
-use App\Models\WeatherForecast;
 use App\Events\WeatherDataPulled;
 use App\Services\OpenWeatherService;
 use Illuminate\Support\Facades\Cache;
@@ -13,15 +12,11 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
-use Symfony\Component\HttpFoundation\Test\Constraint\ResponseIsUnprocessable;
 
-class PullHistoricalWeatherData implements ShouldQueue
+class PullForecastData implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-
     protected $date;
 
     /**
@@ -44,15 +39,20 @@ class PullHistoricalWeatherData implements ShouldQueue
         City::all()->each(function ($city) use ($weather) {
 
             $response = Cache::remember('openWeather' . $this->date . $city->lat, now()->addMinutes(10), function () use ($city, $weather) {
-                return $weather->getHistoricalWeather($city->lat, $city->lng, $this->date);
+                return $weather->getCurrentAndForecastWeather($city->lat, $city->lng);
             });
 
+            $exactDay = collect($response->json()['daily'])->filter(function ($value) {
+                return Carbon::createFromTimestamp($value['dt'])->format('m/d/Y') == Carbon::createFromTimestamp($this->date)->format('m/d/Y');
+            });
 
-            if (!$response->successful()) {
-                throw new \Exception($response->json()['message'], $response->json()['cod'],);
+            $data = collect($exactDay)->first();
+
+            if (!$data) {
+                throw new \Exception('Not found', 404);
             }
 
-            WeatherDataPulled::dispatch($city, $this->date, $response['current']);
+            WeatherDataPulled::dispatch($city, $this->date, $data);
         });
     }
 }
