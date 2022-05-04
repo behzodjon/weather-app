@@ -11,7 +11,6 @@ use App\Events\WeatherDataPulled;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Queue;
 use App\Jobs\PullCurrentAndHistoricalData;
 use App\Listeners\UpdateOrCreateWeatherTable;
 use Illuminate\Foundation\Bus\DispatchesJobs;
@@ -24,7 +23,6 @@ class WeatherApiTest extends TestCase
     use RefreshDatabase;
 
 
-
     /**
      * A basic unit test example.
      *
@@ -32,18 +30,15 @@ class WeatherApiTest extends TestCase
      */
     public function test_dispatch_current_and_historical_job()
     {
-        Bus::fake();
+        Bus::fake([PullCurrentAndHistoricalData::class]);
 
-        $date = Carbon::yesterday();
+        $now = Carbon::now()->subDay();
 
-        PullCurrentAndHistoricalData::dispatch($date);
+        PullWeatherApiData::dispatchSync($now);
 
-        Bus::assertDispatched(function (PullCurrentAndHistoricalData $job) {
-            return Carbon::createFromDate($job->date)->isPast();
-        });
-
-        Bus::assertNotDispatched(PullForecastData::class);
+        Bus::assertDispatched(PullCurrentAndHistoricalData::class, 1);
     }
+
 
     /**
      * A basic unit test example.
@@ -52,20 +47,16 @@ class WeatherApiTest extends TestCase
      */
     public function test_dispatch_forecast_job()
     {
-        Bus::fake();
+        Bus::fake([PullForecastData::class]);
 
-        $date = Carbon::tomorrow();
+        $now = Carbon::tomorrow();
 
-        PullForecastData::dispatch($date);
+        PullWeatherApiData::dispatchSync($now);
 
-        Bus::assertDispatched(function (PullForecastData $job) {
-            return Carbon::createFromDate($job->date)->isFuture();
-        });
-
-        Bus::assertNotDispatched(PullCurrentAndHistoricalData::class);
+        Bus::assertDispatched(PullForecastData::class, 1);
     }
 
-      /**
+    /**
      * A basic unit test example.
      *
      * @return void
@@ -73,18 +64,25 @@ class WeatherApiTest extends TestCase
     public function test_dispatch_weather_data_pulled_event()
     {
         Event::fake();
-        
+
+
+        $data =  Http::fake([
+            'https://api.openweathermap.org/data/2.5/onecall/*' => Http::response(['current'], 200, ['Headers']),
+        ]);
+
         $city = City::factory()->create();
 
-        $date = Carbon::tomorrow();
+        $date = Carbon::yesterday();
 
-        WeatherDataPulled::dispatch($city, $date, []);
+        event(new WeatherDataPulled($city, $date, $data));
 
-        Event::assertDispatched(WeatherDataPulled::class);
+        Event::assertDispatched(WeatherDataPulled::class, function ($e) use ($city) {
+            return $e->city->id === $city->id;
+        });
 
     }
 
-       /**
+    /**
      * A basic unit test example.
      *
      * @return void
@@ -97,6 +95,5 @@ class WeatherApiTest extends TestCase
             WeatherDataPulled::class,
             UpdateOrCreateWeatherTable::class
         );
-
     }
 }

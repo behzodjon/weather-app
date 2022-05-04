@@ -14,7 +14,7 @@ class PullWeatherApiData implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $date;
+    public $date;
 
     /**
      * Create a new job instance.
@@ -34,7 +34,7 @@ class PullWeatherApiData implements ShouldQueue
     public function handle()
     {
         $dateTimestamp = Carbon::createFromDate($this->date)->timestamp;
-        
+
         Carbon::createFromDate($this->date)->isPast()
             ? PullCurrentAndHistoricalData::dispatch($dateTimestamp)
             : PullForecastData::dispatch($dateTimestamp);
