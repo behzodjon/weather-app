@@ -17,7 +17,7 @@ class PullCurrentAndHistoricalData implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $date;
+    public $date;
 
     /**
      * Create a new job instance.

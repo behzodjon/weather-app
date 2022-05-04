@@ -34,6 +34,7 @@ class PullWeatherApiData implements ShouldQueue
     public function handle()
     {
         $dateTimestamp = Carbon::createFromDate($this->date)->timestamp;
+        
         Carbon::createFromDate($this->date)->isPast()
             ? PullCurrentAndHistoricalData::dispatch($dateTimestamp)
             : PullForecastData::dispatch($dateTimestamp);

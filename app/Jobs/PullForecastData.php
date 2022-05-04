@@ -17,7 +17,8 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 class PullForecastData implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    protected $date;
+
+    public $date;
 
     /**
      * Create a new job instance.
@@ -51,6 +52,7 @@ class PullForecastData implements ShouldQueue
             if (!$data) {
                 throw new \Exception('Not found', 404);
             }
+            
             WeatherDataPulled::dispatch($city, $this->date, $data);
         });
     }
